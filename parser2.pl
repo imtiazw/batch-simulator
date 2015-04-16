@@ -13,34 +13,15 @@ use FCFSC;
 use Backfilling;
 use ExecutionProfile ':stooges';
 use Random;
-use Database;
 
 local $| = 1;
 
-my ($trace_file_name, $jobs_number, $executions_number, $cpus_number, $cluster_size, $threads_number) = @ARGV;
-die 'missing arguments: trace_file jobs_number executions_number cpus_number cluster_size threads_number' unless defined $threads_number;
+my ($trace_file_name, $jobs_number, $executions_number, $cpus_number, $cluster_size, $threads_number, $execution_id) = @ARGV;
 
 # This line keeps the code from bein executed if there are uncommited changes in the git tree if the branch being used is the master branch
 #my $git_branch = `git symbolic-ref --short HEAD`;
 #chomp($git_branch);
 #die 'git tree not clean' if ($git_branch eq 'master') and (system('./check_git.sh'));
-
-# Create new execution in the database
-my %execution = (
-	trace_file => $trace_file_name,
-	jobs_number => $jobs_number,
-	executions_number => $executions_number,
-	cpus_number => $cpus_number,
-	threads_number => $threads_number,
-	git_revision => `git rev-parse HEAD`,
-	comments => "parser script, backfilling best effort vs local contiguous, blocks of jobs, without submit times",
-	cluster_size => $cluster_size
-);
-
-my $database = Database->new();
-#$database->prepare_tables();
-#die 'created tables';
-my $execution_id = $database->add_execution(\%execution);
 
 # Create a directory to store the output
 my $basic_file_name = "parser2-$jobs_number-$executions_number-$cpus_number-$execution_id";
@@ -80,9 +61,6 @@ for my $i (0..($threads_number - 1)) {
 my @results;
 push @results, @{$_->join()} for (@threads);
 
-# Update run time in the database
-$database->update_execution_run_time($execution_id, time() - $start_time);
-
 # Print all results in a file
 print STDERR "Writing results to experiment/parser2/$basic_file_name/$basic_file_name.csv\n";
 write_results_to_file(\@results, "experiment/parser2/$basic_file_name/$basic_file_name.csv");
@@ -111,21 +89,16 @@ sub write_results_to_file {
 sub run_all_thread {
 	my ($id, $execution_id) = @_;
 	my @results;
-	my $database = Database->new();
 
 	for my $i (1..($executions_number/$threads_number)) {
 		if (!$id) {
 			print "Running trace $i/" . $executions_number/$threads_number . "\r";
 		}
 
-		# Generate the trace and add it to the database
-		#my $trace_random = Trace->new_block_from_trace($trace, $jobs_number);
-		#$trace_random->fix_submit_times();
-
 		my $trace_random = Trace->new_from_trace($trace, $jobs_number);
-		#$trace_random->reset_jobs_numbers();
+		$trace_random->write_to_file("experiment/parser2/$basic_file_name/$
 
-		my $trace_id = $database->add_trace($trace_random, $execution_id);
+		#$trace_random->reset_jobs_numbers();
 
 		my @random_traces = map { Trace->copy_from_trace($trace_random) } (0..$#variants);
 		my @schedules = map { Backfilling->new($random_traces[$_], $cpus_number, $cluster_size, $variants[$_]) } (0..$#variants);
@@ -140,7 +113,7 @@ sub run_all_thread {
 				$_->locality_factor(),
 				$_->run_time(),
 			} @schedules),
-			$trace_id
+			$i
 		];
 	}
 
