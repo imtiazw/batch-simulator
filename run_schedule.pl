@@ -25,5 +25,6 @@ my @results = (
 	$schedule->run_time(),
 );
 
-print STDOUT join(' ', @results);
+print STDOUT join(' ', @results) . "\n";
+$schedule->tycat();
 
