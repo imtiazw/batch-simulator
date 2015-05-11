@@ -16,14 +16,14 @@ use ExecutionProfile ':stooges';
 my $trace_file = '../swf/CEA-Curie-2011-2.1-cln-b1-clean2.swf';
 my $schedule_script = './run_schedule.pl';
 my $experiment_path = 'experiment/run_instances_paper';
-my $execution_id = 2;
+my $execution_id = 3;
 my $instances = 512;
 my $jobs_number = 300;
 my $cpus_number = 512;
 my $cluster_size = 16;
 my $threads_number = 6;
-#my @backfilling_variants = (EP_FIRST, EP_BEST_EFFORT, EP_CONTIGUOUS, EP_BEST_EFFORT_LOCALITY, EP_CLUSTER);
-my @backfilling_variants = (EP_FIRST);
+my @backfilling_variants = (EP_FIRST, EP_BEST_EFFORT, EP_CONTIGUOUS, EP_BEST_EFFORT_LOCALITY, EP_CLUSTER);
+#my @backfilling_variants = (EP_FIRST);
 
 $SIG{INT} = \&catch_signal;
 
@@ -116,7 +116,7 @@ sub write_results_to_file {
 		'CONT_CMAX', 'CONT_CONTJ', 'CONT_LOCJ', 'CONT_LOCF', 'CONT_RT',
 		'BELOC_CMAX', 'BELOC_CONTJ', 'BELOC_LOCJ', 'BELOC_LOCF', 'BELOC_RT',
 		'LOC_CMAX', 'LOC_CONTJ', 'LOC_LOCJ', 'LOC_LOCF', 'LOC_RT',
-		'TRACE_ID',
+		'INSTANCE',
 	) . "\n";
 
 	for my $results_item (@{$results}) {
