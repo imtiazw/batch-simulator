@@ -151,6 +151,9 @@ sub run {
 		for my $event (@{$typed_events[SUBMISSION_EVENT]}) {
 			my $job = $event->payload();
 
+			# Rejection when it doesn't depend on the job's
+			# reservation could be done here
+
 			if ($self->{uses_external_simulator}) {
 				$job->requested_time($job->requested_time() + $self->{job_delay});
 				$job->submit_time($self->{current_time});
@@ -299,6 +302,9 @@ sub assign_job {
 	else {
 		$job->run_time($new_job_run_time);
 	}
+
+	# If the rejection criteria depends on the scheduling the job, we could
+	# reject here
 
 	$job->assign_to($starting_time, $chosen_processors);
 	$self->{execution_profile}->add_job_at($starting_time, $job);
